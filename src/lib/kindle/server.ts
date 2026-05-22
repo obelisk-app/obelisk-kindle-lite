@@ -30,9 +30,20 @@ interface QueryOptions {
   readonly maxWait?: number;
 }
 
+interface AuthTemplate {
+  readonly kind: number;
+  readonly content: string;
+  readonly created_at: number;
+  readonly tags: string[][];
+}
+
 interface RelayPool {
   querySync(relays: string[], filter: Filter, options?: QueryOptions): Promise<unknown[]>;
-  publish(relays: string[], event: unknown): Promise<unknown>[];
+  publish(
+    relays: string[],
+    event: unknown,
+    params?: { onauth?: (event: AuthTemplate) => Promise<unknown>; maxWait?: number },
+  ): Promise<unknown>[];
   close(relays: string[]): void;
 }
 
@@ -127,6 +138,14 @@ export async function publishKindleAccountMetadata() {
   }
 }
 
+function signRelayAuth(event: AuthTemplate, sk: Uint8Array) {
+  return finalizeEvent(event, sk);
+}
+
+export function getKindlePublishAuthHandler(sk: Uint8Array) {
+  return async (event: AuthTemplate) => signRelayAuth(event, sk);
+}
+
 export async function publishKindleMessage(groupId: string, content: string) {
   const cleanGroupId = getFixedKindleGroupId();
   const cleanContent = content.replace(/\r\n/g, '\n').trim().slice(0, MAX_MESSAGE_LENGTH);
@@ -150,7 +169,12 @@ export async function publishKindleMessage(groupId: string, content: string) {
 
   const pool = await createPool();
   try {
-    const settled = await Promise.allSettled(pool.publish([...KINDLE_DEFAULT_RELAYS], event));
+    const settled = await Promise.allSettled(
+      pool.publish([...KINDLE_DEFAULT_RELAYS], event, {
+        onauth: getKindlePublishAuthHandler(signer.sk),
+        maxWait: 8000,
+      }),
+    );
     const ok = settled.some((item) => item.status === 'fulfilled');
     if (!ok) {
       const reason = settled.map((item) => (item.status === 'rejected' ? String(item.reason) : '')).join('; ');

@@ -14,6 +14,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'server-only': path.resolve(__dirname, './src/test/mocks/server-only.ts'),
       // Dedupe React across the symlinked SDK packages — without these,
       // `@nostr-wot/data/react` (loaded as raw TS via file: deps) imports
       // its own copy of React from nostr-wot-sdk/node_modules, breaking

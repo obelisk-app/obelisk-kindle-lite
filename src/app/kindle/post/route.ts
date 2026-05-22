@@ -1,10 +1,9 @@
-import { redirect } from 'next/navigation';
 import { createKindleSessionCookie, isKindleSessionCookieValid, verifyKindlePassword } from '@/lib/kindle/auth';
 import { publishKindleMessage } from '@/lib/kindle/server';
 
-function redirectToKindle(groupId: string, params: Record<string, string>): never {
+function redirectToKindle(request: Request, groupId: string, params: Record<string, string>): Response {
   const search = new URLSearchParams({ group: groupId, ...params });
-  redirect(`/kindle?${search.toString()}`);
+  return Response.redirect(new URL(`/kindle?${search.toString()}`, request.url), 303);
 }
 
 export async function POST(request: Request): Promise<Response | void> {
@@ -28,15 +27,14 @@ export async function POST(request: Request): Promise<Response | void> {
   }
 
   if (!isKindleSessionCookieValid(request.headers.get('cookie'))) {
-    redirectToKindle(groupId, { error: 'Password required' });
+    return redirectToKindle(request, groupId, { error: 'Password required' });
   }
 
   try {
     const result = await publishKindleMessage(groupId, content);
-    redirectToKindle(groupId, { posted: result.eventId });
+    return redirectToKindle(request, groupId, { posted: result.eventId });
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('NEXT_REDIRECT:')) throw error;
     const message = error instanceof Error ? error.message : 'Publish failed';
-    redirectToKindle(groupId, { error: message });
+    return redirectToKindle(request, groupId, { error: message });
   }
 }

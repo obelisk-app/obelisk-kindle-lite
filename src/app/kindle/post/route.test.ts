@@ -63,7 +63,10 @@ describe('/kindle/post', () => {
       body: new URLSearchParams({ groupId: 'general', content: 'hello' }),
     });
 
-    await expect(POST(request)).rejects.toThrow('NEXT_REDIRECT:/kindle?group=general&error=Password+required');
+    const response = await POST(request);
+
+    expect(response?.status).toBe(303);
+    expect(response?.headers.get('location')).toBe('http://paper.test/kindle?group=general&error=Password+required');
     expect(publishKindleMessageMock).not.toHaveBeenCalled();
   });
 
@@ -75,7 +78,10 @@ describe('/kindle/post', () => {
       body: new URLSearchParams({ groupId: 'general', content: 'hello' }),
     });
 
-    await expect(POST(request)).rejects.toThrow('NEXT_REDIRECT:/kindle?group=general&posted=event-1');
+    const response = await POST(request);
+
+    expect(response?.status).toBe(303);
+    expect(response?.headers.get('location')).toBe('http://paper.test/kindle?group=general&posted=event-1');
     expect(publishKindleMessageMock).toHaveBeenCalledWith('general', 'hello');
   });
 });
