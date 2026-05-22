@@ -6,10 +6,9 @@ import { SimplePool } from 'nostr-tools/pool';
 import { finalizeEvent, generateSecretKey, getPublicKey, nip19, type Filter } from 'nostr-tools';
 import { hexToBytes } from '@noble/hashes/utils.js';
 import { KINDLE_DEFAULT_RELAYS } from './demo';
+import { getFixedKindleGroup, getFixedKindleGroupId, getKindleGroupRelayTag, isAllowedKindleGroupId } from './channel';
 import {
   KINDLE_GROUP_MESSAGE_KIND,
-  KINDLE_GROUP_METADATA_KIND,
-  latestKindleGroups,
   latestKindleMessages,
   type KindleGroup,
   type KindleMessage,
@@ -53,19 +52,8 @@ export async function fetchKindleSnapshot(groupId?: string | null): Promise<Kind
   const pool = await createPool();
 
   try {
-    const groupEvents = await pool.querySync(
-      [...relays],
-      { kinds: [KINDLE_GROUP_METADATA_KIND], limit: 80 },
-      { maxWait: 4500 },
-    );
-    const groups = latestKindleGroups(groupEvents, relays[0]).filter(
-      (group) => group.channelKind === 'text' && group.isPublic,
-    );
-    const selectedGroup = groups.find((group) => group.id === groupId) ?? groups[0] ?? null;
-
-    if (!selectedGroup) {
-      return { relays, groups, selectedGroup: null, messages: [], error: 'No public text groups returned by relay.' };
-    }
+    const groups = [getFixedKindleGroup()];
+    const selectedGroup = groups[0];
 
     const messageEvents = await pool.querySync(
       [...relays],
@@ -114,10 +102,10 @@ export function getKindleServerSigner() {
 }
 
 export async function publishKindleMessage(groupId: string, content: string) {
-  const cleanGroupId = groupId.trim();
+  const cleanGroupId = getFixedKindleGroupId();
   const cleanContent = content.replace(/\r\n/g, '\n').trim().slice(0, MAX_MESSAGE_LENGTH);
 
-  if (!cleanGroupId) throw new Error('Missing group id.');
+  if (!isAllowedKindleGroupId(groupId.trim())) throw new Error('Kindle posting is locked to Obelisk General.');
   if (!cleanContent) throw new Error('Missing message.');
 
   const signer = getKindleServerSigner();
@@ -125,7 +113,10 @@ export async function publishKindleMessage(groupId: string, content: string) {
     {
       kind: KINDLE_GROUP_MESSAGE_KIND,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [['h', cleanGroupId]],
+      tags: [
+        ['h', cleanGroupId, getKindleGroupRelayTag()],
+        ['-'],
+      ],
       content: cleanContent,
     },
     signer.sk,
@@ -140,7 +131,11 @@ export async function publishKindleMessage(groupId: string, content: string) {
       throw new Error(reason || 'Relay rejected publish.');
     }
 
-    const verify = await pool.querySync([...KINDLE_DEFAULT_RELAYS], { ids: [event.id], limit: 1 }, { maxWait: 3500 });
+    const verify = await pool.querySync(
+      [...KINDLE_DEFAULT_RELAYS],
+      { kinds: [KINDLE_GROUP_MESSAGE_KIND], '#h': [cleanGroupId], limit: 1 },
+      { maxWait: 3500 },
+    );
     return {
       eventId: event.id,
       verified: verify.length === 1,

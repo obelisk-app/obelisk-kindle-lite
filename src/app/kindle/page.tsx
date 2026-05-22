@@ -34,7 +34,7 @@ function ObeliskMark() {
 
 export default async function KindlePage({ searchParams }: KindlePageProps) {
   const params = (await searchParams) ?? {};
-  const selectedGroupId = first(params.group) ?? null;
+  const selectedGroupId = null;
   const posted = first(params.posted);
   const error = first(params.error);
   const signer = getKindleServerSigner();
@@ -73,16 +73,9 @@ export default async function KindlePage({ searchParams }: KindlePageProps) {
       </section>
 
       <section className="paper-section">
-        <h2>Text channels</h2>
-        {snapshot.groups.length === 0 ? <p>No text channels loaded.</p> : null}
-        <ul>
-          {snapshot.groups.map((item) => (
-            <li key={item.id}>
-              <a href={`/kindle?group=${encodeURIComponent(item.id)}`}>{item.name}</a>
-              {item.id === group?.id ? ' *' : ''}
-            </li>
-          ))}
-        </ul>
+        <h2>Channel</h2>
+        <p>{group?.name ?? 'General'} only.</p>
+        <p>Group: 26a9cceda473cb1b</p>
       </section>
 
       {group ? (
