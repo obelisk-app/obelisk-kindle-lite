@@ -64,11 +64,13 @@ a {
 
 .paper-form label,
 .paper-form textarea,
+.paper-form input,
 .paper-form button {
   display: block;
 }
 
-.paper-form textarea {
+.paper-form textarea,
+.paper-form input {
   background: white;
   border: 1px solid black;
   color: black;

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { getKindleServerSigner, fetchKindleSnapshot } from '@/lib/kindle/server';
+import { isKindleSessionCookieValid } from '@/lib/kindle/auth';
 import { formatUnixTime, shortPubkey } from '@/lib/kindle/nostr';
 import './plain.css';
 
@@ -36,6 +38,7 @@ export default async function KindlePage({ searchParams }: KindlePageProps) {
   const posted = first(params.posted);
   const error = first(params.error);
   const signer = getKindleServerSigner();
+  const isUnlocked = isKindleSessionCookieValid((await headers()).get('cookie'));
   const snapshot = await fetchKindleSnapshot(selectedGroupId);
   const group = snapshot.selectedGroup;
 
@@ -56,6 +59,20 @@ export default async function KindlePage({ searchParams }: KindlePageProps) {
       </header>
 
       <section className="paper-section">
+        <h2>Access</h2>
+        {isUnlocked ? (
+          <p>Unlocked. Posting uses the server-side Nostr key.</p>
+        ) : (
+          <form action="/kindle/post" method="post" className="paper-form">
+            <input type="hidden" name="action" value="login" />
+            <label htmlFor="password">Password</label>
+            <input id="password" name="password" type="password" />
+            <button type="submit">Unlock posting</button>
+          </form>
+        )}
+      </section>
+
+      <section className="paper-section">
         <h2>Text channels</h2>
         {snapshot.groups.length === 0 ? <p>No text channels loaded.</p> : null}
         <ul>
@@ -73,12 +90,16 @@ export default async function KindlePage({ searchParams }: KindlePageProps) {
           <h2>{group.name}</h2>
           {group.about ? <p>{group.about}</p> : null}
 
-          <form action="/kindle/post" method="post" className="paper-form">
-            <input type="hidden" name="groupId" value={group.id} />
-            <label htmlFor="content">Write</label>
-            <textarea id="content" name="content" maxLength={500} rows={4} />
-            <button type="submit">Post through server signer</button>
-          </form>
+          {isUnlocked ? (
+            <form action="/kindle/post" method="post" className="paper-form">
+              <input type="hidden" name="groupId" value={group.id} />
+              <label htmlFor="content">Write</label>
+              <textarea id="content" name="content" maxLength={500} rows={4} />
+              <button type="submit">Post to General</button>
+            </form>
+          ) : (
+            <p>Enter password above to post.</p>
+          )}
 
           <h3>Messages</h3>
           {snapshot.messages.length === 0 ? <p>No messages in this channel.</p> : null}
