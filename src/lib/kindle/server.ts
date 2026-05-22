@@ -2,6 +2,7 @@ import 'server-only';
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { SimplePool } from 'nostr-tools/pool';
 import { finalizeEvent, generateSecretKey, getPublicKey, nip19, type Filter } from 'nostr-tools';
 import { hexToBytes } from '@noble/hashes/utils.js';
 import { KINDLE_DEFAULT_RELAYS } from './demo';
@@ -36,8 +37,6 @@ interface RelayPool {
 }
 
 async function createPool(): Promise<RelayPool> {
-  const specifier = 'nostr-tools/pool';
-  const { SimplePool } = await import(specifier);
   return new SimplePool() as RelayPool;
 }
 
