@@ -1,0 +1,67 @@
+.paper-page {
+  background: white;
+  color: black;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 720px;
+  padding: 12px;
+}
+
+.paper-header,
+.paper-section {
+  border-bottom: 1px solid black;
+  padding: 0 0 12px;
+  margin: 0 0 14px;
+}
+
+.paper-header svg {
+  display: block;
+  margin: 0 0 8px;
+}
+
+h1 {
+  font-size: 28px;
+  line-height: 1.1;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 22px;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+
+p {
+  margin: 8px 0;
+}
+
+ul,
+ol {
+  margin: 8px 0 0 22px;
+  padding: 0;
+}
+
+li {
+  margin: 8px 0;
+}
+
+a {
+  color: black;
+  text-decoration: underline;
+}
+
+.paper-messages {
+  list-style: decimal;
+}
+
+.paper-messages li {
+  border-top: 1px solid black;
+  padding-top: 8px;
+}
+
+.paper-meta {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
