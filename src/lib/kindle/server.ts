@@ -5,6 +5,7 @@ import { dirname } from 'node:path';
 import { SimplePool } from 'nostr-tools/pool';
 import { finalizeEvent, generateSecretKey, getPublicKey, nip19, type Filter } from 'nostr-tools';
 import { hexToBytes } from '@noble/hashes/utils.js';
+import { buildKindleAccountMetadataEvent, KINDLE_ACCOUNT_NAME } from './profile';
 import { KINDLE_DEFAULT_RELAYS } from './demo';
 import { getFixedKindleGroup, getFixedKindleGroupId, getKindleGroupRelayTag, isAllowedKindleGroupId } from './channel';
 import {
@@ -98,7 +99,32 @@ export function getKindleServerSigner() {
     sk,
     pubkey,
     npub: nip19.npubEncode(pubkey),
+    name: KINDLE_ACCOUNT_NAME,
   };
+}
+
+export async function publishKindleAccountMetadata() {
+  const signer = getKindleServerSigner();
+  const event = finalizeEvent(buildKindleAccountMetadataEvent(), signer.sk);
+  const pool = await createPool();
+
+  try {
+    const settled = await Promise.allSettled(pool.publish([...KINDLE_DEFAULT_RELAYS], event));
+    const ok = settled.some((item) => item.status === 'fulfilled');
+    if (!ok) {
+      const reason = settled.map((item) => (item.status === 'rejected' ? String(item.reason) : '')).join('; ');
+      throw new Error(reason || 'Relay rejected profile metadata.');
+    }
+
+    return {
+      eventId: event.id,
+      pubkey: signer.pubkey,
+      npub: signer.npub,
+      name: KINDLE_ACCOUNT_NAME,
+    };
+  } finally {
+    closePool(pool, KINDLE_DEFAULT_RELAYS);
+  }
 }
 
 export async function publishKindleMessage(groupId: string, content: string) {
