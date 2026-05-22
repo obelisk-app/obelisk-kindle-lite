@@ -56,6 +56,36 @@ a {
   list-style: decimal;
 }
 
+.paper-form {
+  border: 1px solid black;
+  margin: 12px 0;
+  padding: 8px;
+}
+
+.paper-form label,
+.paper-form textarea,
+.paper-form button {
+  display: block;
+}
+
+.paper-form textarea {
+  background: white;
+  border: 1px solid black;
+  color: black;
+  font: inherit;
+  margin: 6px 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.paper-form button {
+  background: white;
+  border: 2px solid black;
+  color: black;
+  font: inherit;
+  padding: 6px 8px;
+}
+
 .paper-messages li {
   border-top: 1px solid black;
   padding-top: 8px;

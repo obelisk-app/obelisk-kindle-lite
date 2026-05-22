@@ -1,13 +1,23 @@
 import type { Metadata } from 'next';
-import { KINDLE_DEMO_GROUPS, KINDLE_DEMO_MESSAGES, KINDLE_DEFAULT_RELAYS } from '@/lib/kindle/demo';
+import { getKindleServerSigner, fetchKindleSnapshot } from '@/lib/kindle/server';
 import { formatUnixTime, shortPubkey } from '@/lib/kindle/nostr';
 import './plain.css';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Obelisk Paper',
   description: 'Plain text read-only Obelisk view for Kindle browsers.',
   alternates: { canonical: '/kindle' },
 };
+
+interface KindlePageProps {
+  readonly searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 function ObeliskMark() {
   return (
@@ -20,56 +30,70 @@ function ObeliskMark() {
   );
 }
 
-export default function KindlePage() {
-  const group = KINDLE_DEMO_GROUPS[0];
-  const messages = KINDLE_DEMO_MESSAGES.filter((message) => message.groupId === group.id);
+export default async function KindlePage({ searchParams }: KindlePageProps) {
+  const params = (await searchParams) ?? {};
+  const selectedGroupId = first(params.group) ?? null;
+  const posted = first(params.posted);
+  const error = first(params.error);
+  const signer = getKindleServerSigner();
+  const snapshot = await fetchKindleSnapshot(selectedGroupId);
+  const group = snapshot.selectedGroup;
 
   return (
     <main className="paper-page">
       <header className="paper-header">
         <ObeliskMark />
         <h1>Obelisk Paper</h1>
-        <p>Plain read-only Kindle view. No login. No posting. No realtime. No app shell.</p>
+        <p>Kindle talks HTTP only. This server talks WebSocket to the Nostr relay.</p>
+        <p>Relay: {snapshot.relays.join(', ')}</p>
+        <p>Server signer: {shortPubkey(signer.pubkey)}</p>
         <p>
-          <a href="/kindle">Refresh</a>
+          <a href={`/kindle${group ? `?group=${encodeURIComponent(group.id)}` : ''}`}>Refresh</a>
         </p>
+        {posted ? <p>Posted: {posted}</p> : null}
+        {error ? <p>Error: {error}</p> : null}
+        {snapshot.error ? <p>Relay error: {snapshot.error}</p> : null}
       </header>
 
       <section className="paper-section">
-        <h2>Servers</h2>
+        <h2>Text channels</h2>
+        {snapshot.groups.length === 0 ? <p>No text channels loaded.</p> : null}
         <ul>
-          {KINDLE_DEFAULT_RELAYS.map((relay) => (
-            <li key={relay}>{relay}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="paper-section">
-        <h2>Groups</h2>
-        <ul>
-          {KINDLE_DEMO_GROUPS.map((item) => (
+          {snapshot.groups.map((item) => (
             <li key={item.id}>
-              <a href={`#${item.id}`}>{item.name}</a>
-              {item.about ? ` — ${item.about}` : ''}
+              <a href={`/kindle?group=${encodeURIComponent(item.id)}`}>{item.name}</a>
+              {item.id === group?.id ? ' *' : ''}
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="paper-section" id={group.id}>
-        <h2>{group.name}</h2>
-        {group.about ? <p>{group.about}</p> : null}
-        <ol className="paper-messages">
-          {messages.map((message) => (
-            <li key={message.id}>
-              <p className="paper-meta">
-                {shortPubkey(message.pubkey)} — {formatUnixTime(message.createdAt)}
-              </p>
-              <p>{message.content}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {group ? (
+        <section className="paper-section" id={group.id}>
+          <h2>{group.name}</h2>
+          {group.about ? <p>{group.about}</p> : null}
+
+          <form action="/kindle/post" method="post" className="paper-form">
+            <input type="hidden" name="groupId" value={group.id} />
+            <label htmlFor="content">Write</label>
+            <textarea id="content" name="content" maxLength={500} rows={4} />
+            <button type="submit">Post through server signer</button>
+          </form>
+
+          <h3>Messages</h3>
+          {snapshot.messages.length === 0 ? <p>No messages in this channel.</p> : null}
+          <ol className="paper-messages">
+            {snapshot.messages.map((message) => (
+              <li key={message.id}>
+                <p className="paper-meta">
+                  {shortPubkey(message.pubkey)} — {formatUnixTime(message.createdAt)}
+                </p>
+                <p>{message.content}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
     </main>
   );
 }
