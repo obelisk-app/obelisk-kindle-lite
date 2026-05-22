@@ -9,16 +9,22 @@
   padding: 12px;
 }
 
-.paper-header,
-.paper-section {
-  border-bottom: 1px solid black;
-  padding: 0 0 12px;
-  margin: 0 0 14px;
+html,
+body,
+body.bg-lc-black {
+  background: white !important;
+  color: black !important;
 }
 
-.paper-header svg {
-  display: block;
-  margin: 0 0 8px;
+body.text-lc-white {
+  color: black !important;
+}
+
+.paper-header,
+.paper-section {
+  border-bottom: 1px solid #999;
+  padding: 0 0 12px;
+  margin: 0 0 14px;
 }
 
 h1 {
@@ -57,7 +63,7 @@ a {
 }
 
 .paper-form {
-  border: 1px solid black;
+  border: 1px solid #999;
   margin: 12px 0;
   padding: 8px;
 }
@@ -72,7 +78,7 @@ a {
 .paper-form textarea,
 .paper-form input {
   background: white;
-  border: 1px solid black;
+  border: 1px solid #999;
   color: black;
   font: inherit;
   margin: 6px 0;
@@ -82,14 +88,14 @@ a {
 
 .paper-form button {
   background: white;
-  border: 2px solid black;
+  border: 1px solid #777;
   color: black;
   font: inherit;
   padding: 6px 8px;
 }
 
 .paper-messages li {
-  border-top: 1px solid black;
+  border-top: 1px solid #ccc;
   padding-top: 8px;
 }
 

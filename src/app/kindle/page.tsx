@@ -21,17 +21,6 @@ function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function ObeliskMark() {
-  return (
-    <svg aria-label="Obelisk" width="32" height="32" viewBox="0 0 32 32" role="img">
-      <rect x="15" y="5" width="2" height="18" fill="black" />
-      <path d="M16 2l5 5H11z" fill="black" />
-      <rect x="10" y="23" width="12" height="3" fill="black" />
-      <rect x="7" y="27" width="18" height="3" fill="black" />
-    </svg>
-  );
-}
-
 export default async function KindlePage({ searchParams }: KindlePageProps) {
   const params = (await searchParams) ?? {};
   const posted = first(params.posted);
@@ -44,7 +33,6 @@ export default async function KindlePage({ searchParams }: KindlePageProps) {
   return (
     <main className="paper-page">
       <header className="paper-header">
-        <ObeliskMark />
         <h1>Obelisk</h1>
         <p><a href="/kindle">Refresh</a></p>
         {posted ? <p>Posted: {posted}</p> : null}
